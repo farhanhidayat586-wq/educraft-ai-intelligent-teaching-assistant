@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EduCraft AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7fb;--sf:#fff;--tx:#0f172a;--mu:#5b6478;--bd:#e3e6ef;--pr:#4f46e5;--ac:#06b6d4;--nv:#0b1230;--ok:#059669;--wn:#d97706;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0f24;--sf:#121936;--tx:#e8ecf8;--mu:#9aa5c4;--bd:#243058;--pr:#818cf8;--nv:#060a1a;color-scheme:dark}}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box}body{margin:0;height:100%;font:15px/1.55 'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+#app{display:flex;min-height:100%}
+nav{width:220px;background:var(--nv);color:#cfd6f0;padding:16px 10px;flex:none}
+nav h1{font-size:18px;color:#fff;margin:4px 10px 16px}nav h1 span{color:var(--ac)}
+nav button{display:block;width:100%;text-align:left;background:none;border:0;color:inherit;padding:10px 12px;border-radius:8px;font:inherit;cursor:pointer}
+nav button:hover,nav button:focus-visible{background:#1c2550;outline:2px solid transparent}nav button.on{background:var(--pr);color:#fff}
+main{flex:1;min-width:0;padding:24px;max-width:1000px}
+h2{margin:0 0 4px;font-size:24px}p.s{color:var(--mu);margin:0 0 18px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.tile{cursor:pointer;text-align:left;font:inherit;color:inherit}.tile:hover,.tile:focus-visible{border-color:var(--pr)}
+.tile b{display:block}.tile small{color:var(--mu)}
+label{display:block;font-weight:600;font-size:13px;margin:10px 0 4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--sf);color:var(--tx);font:inherit}
+input:focus,select:focus,textarea:focus,[contenteditable]:focus{outline:2px solid var(--pr)}
+.btn{background:var(--pr);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}
+.btn.g{background:none;color:var(--pr);border:1px solid var(--pr)}.btn:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:#fef3c7;color:#92400e;font-weight:600}
+.stat{font-size:28px;font-weight:800;color:var(--pr)}
+#doc{background:#fff;color:#111;padding:28px;border-radius:8px;border:1px solid var(--bd);min-height:300px;font-family:Georgia,serif}
+#doc h2{font-size:16px;margin:16px 0 4px;border-bottom:1px solid #ccc}#doc h1{font-size:20px;text-align:center}
+.bar{height:8px;border-radius:9px;background:var(--bd);overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
+.sk{height:14px;border-radius:6px;background:var(--bd);margin:10px 0;animation:p 1s infinite alternate}@keyframes p{to{opacity:.4}}
+#toast{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--nv);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:.3s;pointer-events:none}#toast.on{opacity:1}
+pre{overflow-x:auto;background:var(--bg);padding:10px;border-radius:8px;font-size:12px}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.flow span{background:var(--sf);border:1px solid var(--bd);padding:4px 10px;border-radius:99px;font-size:13px}
+.hero{background:linear-gradient(135deg,var(--nv),#312e81);color:#fff;border-radius:14px;padding:24px;margin-bottom:16px}.hero h2{font-size:26px}
+@media(max-width:720px){#app{flex-direction:column}nav{width:100%;display:flex;overflow-x:auto;padding-top:8px}nav h1{display:none}nav button{white-space:nowrap;width:auto}main{padding:14px}}
+@media print{nav,.noprint,#toast{display:none!important}main{padding:0}#doc{border:0;padding:0}body{background:#fff}.view:not(#v-edit){display:none!important}}
+</style></head><body>
+<div id="app"><nav aria-label="Navigasi utama"><h1>Edu<span>Craft</span> AI</h1></nav><main id="main"></main></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+// ===== Lapisan layanan (terpisah dari UI; ganti dengan fetch ke backend untuk Live AI Mode) =====
+const DOCS={
+"RPP":["Identitas","Tujuan Pembelajaran","Kegiatan Pendahuluan","Kegiatan Inti","Kegiatan Penutup","Asesmen","Refleksi"],
+"Modul Ajar":["Informasi Umum","Kompetensi Awal","Profil Pelajar Pancasila","Sarana dan Prasarana","Tujuan Pembelajaran","Pemahaman Bermakna","Kegiatan Pembelajaran","Asesmen","Diferensiasi","Refleksi"],
+"LKPD":["Identitas","Petunjuk Kerja","Tujuan Pembelajaran","Aktivitas","Pertanyaan Pemantik","Ruang Jawaban","Refleksi"],
+"ATP":["Capaian Pembelajaran","Tujuan Pembelajaran","Alur Tujuan Pembelajaran","Alokasi Waktu","Asesmen"],
+"Kisi-Kisi Soal":["Identitas","Tujuan Pembelajaran","Indikator","Level Kognitif","Bentuk Soal","Asesmen"],
+"Soal Pilihan Ganda":["Identitas","Tujuan Pembelajaran","Soal","Kunci Jawaban dan Pembahasan","Asesmen"],
+"Rubrik Penilaian":["Identitas","Tujuan Pembelajaran","Kriteria dan Level","Asesmen","Refleksi"],
+"Asesmen Diagnostik":["Identitas","Tujuan Pembelajaran","Pertanyaan Diagnostik","Asesmen","Diferensiasi"],
+"Remedial dan Pengayaan":["Identitas","Tujuan Pembelajaran","Kegiatan Remedial","Kegiatan Pengayaan","Asesmen"],
+"Rencana Diferensiasi":["Identitas","Tujuan Pembelajaran","Diferensiasi","Kegiatan Inti","Asesmen"],
+};
+const DESC={"RPP":"Rencana satu pertemuan: tujuan, langkah, asesmen.","Modul Ajar":"Perangkat lengkap Kurikulum Merdeka.","LKPD":"Lembar kerja aktivitas peserta didik.","ATP":"Alur urutan tujuan pembelajaran.","Kisi-Kisi Soal":"Peta indikator, level kognitif, bentuk soal.","Soal Pilihan Ganda":"Soal beserta kunci dan pembahasan.","Rubrik Penilaian":"Kriteria dan level capaian.","Asesmen Diagnostik":"Pemetaan kesiapan awal peserta didik.","Remedial dan Pengayaan":"Tindak lanjut hasil asesmen.","Rencana Diferensiasi":"Penyesuaian konten, proses, produk."};
+const OTHER=["TP","Prota","Promes","Bahan Ajar","Materi Pembelajaran","Media Pembelajaran","Bank Soal","Soal Esai","Jurnal Mengajar","Lembar Refleksi","Modul Projek","Presentasi Pembelajaran"];
+const MockAI={
+ suggest(f){const t=f.topic||"materi";return{goal:`Peserta didik mampu menjelaskan konsep ${t} dan menerapkannya dalam contoh kontekstual.`,model:"Problem Based Learning",method:"Diskusi kelompok dan demonstrasi",assess:"Formatif: observasi dan kuis singkat; sumatif: tes tertulis"}},
+ sec(type,s,f){const t=f.topic,g=f.goal,m=f.model,w=f.time,k=f.level;const d=k==="Mendalam"?" Tambahkan contoh lokal dan pertanyaan tingkat tinggi (C4–C6).":"";
+  const M={
+  "Identitas":`Sekolah: ${f.school||"-"} | Mata pelajaran: ${f.subject} | Kelas/Fase: ${f.grade} | Topik: ${t} | Alokasi waktu: ${w} menit | Kurikulum: ${f.cur}`,
+  "Informasi Umum":`Mata pelajaran ${f.subject}, kelas ${f.grade}, topik ${t}, ${w} menit, kurikulum ${f.cur}. Model: ${m}.`,
+  "Tujuan Pembelajaran":g,"Capaian Pembelajaran":`Peserta didik memahami konsep dasar ${t} sesuai fase ${f.grade}.`,
+  "Kegiatan Pendahuluan":`(10 menit) Salam, doa, presensi; apersepsi tentang ${t}; pertanyaan pemantik; penyampaian tujuan: ${g}`,
+  "Kegiatan Inti":`(${Math.round(w*.6)} menit) Penerapan ${m} dengan metode ${f.method}: 1) orientasi masalah ${t}; 2) diskusi kelompok; 3) penyelidikan; 4) presentasi; 5) penguatan guru.${d}`,
+  "Kegiatan Penutup":`(10 menit) Menyimpulkan ${t}, refleksi, asesmen singkat, tindak lanjut.`,
+  "Kegiatan Pembelajaran":`Pendahuluan 10 menit; inti ${Math.round(w*.6)} menit dengan ${m} dan ${f.method}; penutup 10 menit. Seluruh kegiatan mengarah pada tujuan: ${g}`,
+  "Asesmen":`${f.assess}. Instrumen mengukur ketercapaian tujuan: ${g}`,
+  "Refleksi":`Guru: apakah tujuan tentang ${t} tercapai? Peserta didik: apa yang paling saya pahami tentang ${t}?`,
+  "Petunjuk Kerja":`1. Baca petunjuk. 2. Kerjakan berkelompok. 3. Tulis jawaban pada ruang yang tersedia.`,
+  "Aktivitas":`Langkah 1: amati contoh ${t}. Langkah 2: catat temuan. Langkah 3: simpulkan.`,
+  "Pertanyaan Pemantik":`Mengapa ${t} penting dalam kehidupan sehari-hari?`,
+  "Ruang Jawaban":`Jawaban: ................................................................`,
+  "Indikator":`Peserta didik dapat menjelaskan dan menerapkan ${t} (selaras dengan tujuan: ${g}).`,
+  "Level Kognitif":`C2 (memahami), C3 (menerapkan), C4 (menganalisis).`,"Bentuk Soal":`Pilihan ganda (no. 1–5), uraian (no. 6–7).`,
+  "Soal":`1. Pernyataan yang benar tentang ${t} adalah ...\nA. [opsi A]  B. [opsi B]  C. [opsi C]  D. [opsi D]\n(Opsi isi final perlu diverifikasi guru.)`,
+  "Kunci Jawaban dan Pembahasan":`1. B — pembahasan menyesuaikan konsep ${t}. Verifikasi oleh guru diperlukan.`,
+  "Kriteria dan Level":`Kriteria: pemahaman konsep ${t}; Level 4 sangat baik, 3 baik, 2 cukup, 1 perlu bimbingan.`,
+  "Diferensiasi":`Konten: bahan bertingkat; Proses: kelompok berdasar kesiapan; Produk: pilihan laporan/poster. Kebutuhan: ${f.needs||"beragam"}.`};
+  return M[s]||`Konten ${s} untuk ${t}: sesuaikan dengan tujuan "${g}".`},
+ async generate(type,f){await new Promise(r=>setTimeout(r,900));return{title:`${type}: ${f.topic}`,sections:(DOCS[type]||["Identitas","Tujuan Pembelajaran","Isi","Asesmen"]).map(s=>({h:s,b:this.sec(type,s,f)}))}},
+ review(doc){const T=doc.sections.map(s=>s.h+" "+s.b).join(" ").toLowerCase(),has=n=>T.includes(n.toLowerCase());
+  const tp=doc.sections.find(s=>/tujuan/i.test(s.h)),vb=/(menjelaskan|menerapkan|menganalisis|membuat|menyajikan|mampu)/i.test(tp?tp.b:"");
+  const kw=(tp?tp.b:"").toLowerCase().split(/\W+/).filter(w=>w.length>5);const link=x=>kw.length&&kw.some(w=>x.toLowerCase().includes(w));
+  const act=doc.sections.filter(s=>/kegiatan|aktivitas/i.test(s.h)),ass=doc.sections.filter(s=>/asesmen|soal|rubrik/i.test(s.h));
+  const len=T.length;
+  return[["Kelengkapan struktur",Math.min(100,40+doc.sections.length*8),`${doc.sections.length} bagian terdeteksi.`,"Tambahkan bagian yang lazim (mis. refleksi, diferensiasi) bila belum ada."],
+  ["Kejelasan bahasa",len>400?(len>900?85:72):45,`Panjang isi ${len} karakter.`,"Perjelas kalimat dengan instruksi bernomor dan kata kerja operasional."],
+  ["Keselarasan tujuan–kegiatan",!tp?20:(vb?60:35)+(act.some(s=>link(s.b))?35:0),vb?"Tujuan memakai kata kerja operasional.":"Kata kerja operasional tidak ditemukan.","Pastikan tiap kegiatan menyebut capaian dari tujuan."],
+  ["Keselarasan kegiatan–asesmen",ass.length?(ass.some(s=>link(s.b))?90:60):25,ass.length?"Bagian asesmen ada.":"Bagian asesmen tidak ditemukan.","Hubungkan instrumen dengan tujuan yang diukur."],
+  ["Kesesuaian konteks",has(doc.topic||"")||link(T)?88:55,"Topik dicek kemunculannya di isi.","Sebutkan karakteristik peserta didik dan sarana nyata."],
+  ["Konsistensi internal",tp&&!/\.\.\.|\[opsi/.test(T)?85:65,/\.\.\.|\[opsi/.test(T)?"Ada placeholder yang belum dilengkapi.":"Tidak ada placeholder.","Lengkapi isian bertitik dan opsi sebelum dipakai."]]}
+};
+// ===== State & penyimpanan (localStorage, per-browser) =====
+const ST={get(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let lib=ST.get("ec_lib",[]),cur=null,mem={};
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2200)}
+const VIEWS=[["home","Dashboard"],["gen","Buat Perangkat"],["edit","Editor"],["lib","Dokumen Saya"],["lab","AI Lab"],["set","Pengaturan AI"]];
+const nav=$("nav");VIEWS.forEach(([id,n])=>{const b=document.createElement("button");b.textContent=n;b.dataset.v=id;b.onclick=()=>go(id);nav.append(b)});
+function go(v,a){document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));$("#main").innerHTML=`<div class="view" id="v-${v}"></div>`;R[v](a);window.scrollTo(0,0)}
+function saveCur(draft){if(!cur)return;cur.updated=Date.now();cur.history=(cur.history||[]).concat({t:Date.now(),s:JSON.stringify(cur.sections)}).slice(-10);const i=lib.findIndex(d=>d.id===cur.id);i<0?lib.unshift(cur):lib[i]=cur;ST.set("ec_lib",lib);toast(draft?"Draf disimpan":"Perubahan disimpan")}
+const demoTag='<span class="badge">Data Demo</span>';
+const R={
+home(){$("#v-home").innerHTML=`<div class="hero"><h2>Perangkat Pembelajaran Berkualitas, Lebih Cepat dengan AI.</h2><p>Susun, edit, periksa, dan ekspor perangkat ajar dalam satu alur.</p><button class="btn" id="cta">Buat Perangkat Baru</button></div>
+<div class="grid"><div class="card"><div class="stat">${lib.length}</div>Dokumen tersimpan</div><div class="card"><div class="stat">${Object.keys(DOCS).length}</div>Jenis dokumen dengan struktur khusus</div><div class="card"><div class="stat">Demo</div>Mode aktif (tanpa API)</div></div>
+<h3>Dokumen terakhir</h3>${lib.slice(0,4).map(d=>`<div class="card"><b>${esc(d.title)}</b> <small>${new Date(d.updated).toLocaleString("id-ID")}</small> <button class="btn g" data-o="${d.id}">Buka</button></div>`).join("")||'<div class="card">Belum ada dokumen. Mulai dengan "Buat Perangkat Baru".</div>'}
+<p class="s">Hasil bersifat draf. Verifikasi kesesuaian dengan pedoman resmi yang berlaku.</p>`;
+ $("#cta").onclick=()=>go("gen");document.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{cur=lib.find(d=>d.id==b.dataset.o);go("edit")})},
+gen(){const types=Object.keys(DOCS);$("#v-gen").innerHTML=`<h2>AI Document Generator</h2><p class="s">Pilih jenis dokumen, isi kebutuhan, lalu buat. ${demoTag}</p>
+<div class="grid" id="tiles">${types.map(t=>`<button class="card tile" data-t="${t}"><b>${t}</b><small>${DESC[t]}</small></button>`).join("")}</div>
+<p class="s">Segera hadir (belum punya struktur khusus): ${OTHER.join(", ")}.</p><div class="card" id="form" hidden></div><div id="out"></div>`;
+ document.querySelectorAll(".tile").forEach(b=>b.onclick=()=>form(b.dataset.t))},
+edit(){if(!cur){$("#v-edit").innerHTML='<h2>Editor</h2><div class="card">Belum ada dokumen terbuka. Buat atau buka dari Dokumen Saya.</div>';return}
+ $("#v-edit").innerHTML=`<h2 class="noprint">Editor Dokumen</h2><div class="row noprint"><button class="btn" id="sv">Simpan</button><button class="btn g" id="dr">Simpan Draf</button><button class="btn g" id="dp">Duplikasi</button><button class="btn g" id="pdf">Ekspor PDF / Cetak</button><button class="btn g" id="dc">Ekspor DOCX (Word)</button><button class="btn g" id="cp">Salin Teks</button><button class="btn g" id="rv">Periksa Dokumen</button><span id="as" class="s" aria-live="polite"></span></div>
+<div id="doc" contenteditable="true" aria-label="Isi dokumen"><h1>${esc(cur.title)}</h1>${cur.sections.map(s=>`<h2>${esc(s.h)}</h2><p>${esc(s.b).replace(/\n/g,"<br>")}</p>`).join("")}<p style="font-size:11px;color:#777">Dibuat dengan EduCraft AI (draf). Verifikasi dengan pedoman resmi.</p></div>
+<div id="rev"></div><details class="card noprint"><summary>Riwayat revisi (${(cur.history||[]).length})</summary>${(cur.history||[]).map(h=>`<div>${new Date(h.t).toLocaleString("id-ID")}</div>`).join("")}</details>`;
+ const sync=()=>{const ss=[];let h=null;$("#doc").querySelectorAll("h2,p").forEach(e=>{if(e.tagName=="H2"){h={h:e.textContent,b:""};ss.push(h)}else if(h&&!e.style.fontSize)h.b+=(h.b?"\n":"")+e.innerText.trim()});if(ss.length)cur.sections=ss};
+ let tm;$("#doc").oninput=()=>{$("#as").textContent="Mengetik…";clearTimeout(tm);tm=setTimeout(()=>{sync();cur.updated=Date.now();const i=lib.findIndex(d=>d.id===cur.id);if(i>=0){lib[i]=cur;ST.set("ec_lib",lib)}$("#as").textContent="Tersimpan otomatis "+new Date().toLocaleTimeString("id-ID")},800)};
+ $("#sv").onclick=()=>{sync();saveCur()};$("#dr").onclick=()=>{sync();saveCur(true)};
+ $("#dp").onclick=()=>{sync();cur={...cur,id:Date.now(),title:cur.title+" (salinan)",history:[]};saveCur();go("edit")};
+ $("#pdf").onclick=()=>{toast("Pilih 'Simpan sebagai PDF' pada dialog cetak (teks tetap dapat dipilih)");setTimeout(()=>window.print(),400)};
+ const txt=()=>{sync();return cur.title+"\n\n"+cur.sections.map(s=>s.h.toUpperCase()+"\n"+s.b).join("\n\n")};
+ $("#cp").onclick=async()=>{try{await navigator.clipboard.writeText(txt());toast("Teks disalin")}catch(e){toast("Salin gagal; blok teks secara manual")}};
+ $("#dc").onclick=()=>{sync();const h=`<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>@page{size:21cm 29.7cm;margin:2.5cm}body{font-family:Times New Roman;font-size:12pt}h1{text-align:center}</style></head><body>${$("#doc").innerHTML}</body></html>`;const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff",h],{type:"application/msword"}));a.download=cur.title.replace(/\W+/g,"_")+".doc";a.click();toast("Berkas .doc (HTML Word) diunduh")};
+ $("#rv").onclick=()=>{sync();const rs=MockAI.review({...cur,topic:cur.topic});$("#rev").innerHTML=`<div class="card noprint"><h3>AI Quality Review</h3><p class="s">Skor adalah evaluasi otomatis berbasis aturan sederhana aplikasi, bukan sertifikasi atau jaminan kelulusan. ${demoTag}</p>${rs.map(r=>`<div style="margin:10px 0"><b>${r[0]}</b> — ${r[1]}/100<div class="bar"><i style="width:${r[1]}%"></i></div><small>${r[2]} <b>Saran:</b> ${r[3]}</small></div>`).join("")}<div class="row"><button class="btn" id="fx">Perbaiki Otomatis</button></div></div>`;
+  $("#fx").onclick=()=>{cur.sections.forEach(s=>{if(/\.\.\.|\[opsi/.test(s.b))s.b+="\n[Catatan: lengkapi bagian bertitik/placeholder sebelum dipakai.]"});if(!cur.sections.some(s=>/refleksi/i.test(s.h)))cur.sections.push({h:"Refleksi",b:MockAI.sec("",'Refleksi',cur.f||{topic:cur.topic})});saveCur();go("edit");toast("Perbaikan diterapkan; periksa ulang")}}},
+lib(){$("#v-lib").innerHTML=`<h2>Dokumen Saya</h2><p class="s">Tersimpan di browser ini saja (localStorage).</p>${lib.map(d=>`<div class="card"><b>${esc(d.title)}</b><div class="row"><button class="btn g" data-o="${d.id}">Buka</button><button class="btn g" data-x="${d.id}">Hapus</button></div></div>`).join("")||'<div class="card">Belum ada dokumen.</div>'}`;
+ document.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{cur=lib.find(d=>d.id==b.dataset.o);go("edit")});
+ document.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{if(confirm("Hapus dokumen ini? Tindakan tidak dapat dibatalkan.")){lib=lib.filter(d=>d.id!=b.dataset.x);ST.set("ec_lib",lib);go("lib");toast("Dokumen dihapus")}})},
+lab(){$("#v-lab").innerHTML=`<h2>AI Lab</h2><p class="s">Penjelasan teknologi AI dalam produk ini.</p>
+<div class="card"><h3>Alur</h3><div class="flow"><span>Input</span>→<span>Validasi Input</span>→<span>Prompt Terstruktur</span>→<span>Model AI</span>→<span>Validasi Output</span>→<span>Review Kualitas</span>→<span>Editor</span>→<span>Ekspor</span></div></div>
+<div class="card"><h3>Konsep</h3><p><b>LLM</b> memprediksi token berikutnya dari konteks; hasilnya fasih tetapi dapat keliru. <b>Prompt engineering</b> menetapkan peran, struktur, dan batasan agar keluaran konsisten. <b>Output terstruktur</b> (JSON schema) divalidasi sebelum ditampilkan.</p>
+<p>Contoh prompt sistem:</p><pre>Anda asisten perancang pembelajaran untuk guru Indonesia.
+Keluarkan HANYA JSON: {"title":str,"sections":[{"h":str,"b":str}]}.
+Selaraskan tujuan, kegiatan, dan asesmen. Jangan membuat sumber/data palsu.
+Tandai asumsi. Bahasa Indonesia baku.</pre></div>
+<div class="card"><h3>Status implementasi (jujur)</h3><ul><li><b>Demo Mode (aktif):</b> konten dari templat dalam kode (<code>MockAI</code>), bukan model AI. Berlabel "Data Demo".</li><li><b>Live AI Mode:</b> belum tersedia pada versi halaman ini. Memerlukan backend dengan API key di server; ganti <code>MockAI.generate</code> dengan panggilan ke endpoint Anda.</li><li>AI Quality Review berupa aturan heuristik sederhana (kata kerja operasional, keberadaan bagian, kecocokan kata kunci), bukan machine learning, dan tidak ada fine-tuning.</li></ul></div>
+<div class="card"><h3>Keterbatasan</h3><p>AI dapat keliru, bias, atau mengarang detail. Guru wajib memverifikasi isi dan kesesuaian dengan pedoman resmi.</p></div>`},
+set(){$("#v-set").innerHTML=`<h2>Pengaturan AI</h2><div class="card"><label>Mode</label><select disabled><option>Demo Mode (aktif)</option><option>Live AI Mode (perlu backend)</option></select><p class="s">Untuk Live AI: buat endpoint server (mis. Next.js route) yang menyimpan API key di environment variable, memvalidasi input, meminta JSON terstruktur, memvalidasi respons, lalu hubungkan ke <code>MockAI.generate</code>. API key tidak boleh ada di frontend. Input yang dikirim ke penyedia AI eksternal wajib diinformasikan ke pengguna.</p></div>`}};
+function form(type){const f=$("#form");f.hidden=false;const ass=/Soal|Kisi|Rubrik|Asesmen|LKPD/.test(type);
+ f.innerHTML=`<h3>${type}</h3><div class="grid"><div><label for="school">Sekolah (opsional)</label><input id="school"></div><div><label for="level">Jenjang</label><select id="jj"><option>SD</option><option>SMP</option><option>SMA</option><option>SMK</option></select></div><div><label for="grade">Fase / Kelas *</label><input id="grade" placeholder="Fase D / Kelas VII"></div><div><label for="subject">Mata pelajaran *</label><input id="subject"></div><div><label for="topic">Topik / materi *</label><input id="topic"></div><div><label for="cur">Kurikulum</label><select id="cur"><option>Kurikulum Merdeka</option><option>Kurikulum 2013</option></select></div><div><label for="time">Alokasi waktu (menit) *</label><input id="time" type="number" value="90"></div><div><label for="lvl">Tingkat keluaran</label><select id="lvl"><option>Ringkas</option><option selected>Standar</option><option>Mendalam</option></select></div></div>
+<label for="goal">Tujuan pembelajaran</label><textarea id="goal" rows="2"></textarea>
+${/RPP|Modul|LKPD|Diferensiasi|Remedial/.test(type)?`<label for="model">Model pembelajaran</label><input id="model" value="Problem Based Learning"><label for="method">Metode</label><input id="method" value="Diskusi kelompok">`:""}
+${ass?`<label for="assess">Jenis asesmen</label><input id="assess" value="Formatif dan sumatif">`:""}
+<label for="needs">Karakteristik/kebutuhan peserta didik</label><textarea id="needs" rows="2"></textarea>
+<div class="row"><button class="btn g" id="ai">Bantu Isi dengan AI</button><button class="btn" id="go">Buat Dokumen</button></div><div id="err" role="alert" style="color:#dc2626"></div>`;
+ const v=i=>($("#"+i)||{value:""}).value.trim();const get=()=>({school:v("school"),grade:v("grade"),subject:v("subject"),topic:v("topic"),cur:v("cur"),time:+v("time")||90,level:v("lvl"),goal:v("goal"),model:v("model")||"Pembelajaran berdiferensiasi",method:v("method")||"Diskusi",assess:v("assess")||"Formatif",needs:v("needs")});
+ $("#ai").onclick=()=>{const f2=get();if(!f2.topic){$("#err").textContent="Isi topik dahulu.";return}const s=MockAI.suggest(f2);$("#goal").value=s.goal;if($("#model"))$("#model").value=s.model;if($("#method"))$("#method").value=s.method;if($("#assess"))$("#assess").value=s.assess;toast("Saran (Data Demo) diisikan")};
+ $("#go").onclick=async()=>{const x=get(),e=[];if(!x.grade)e.push("Fase/Kelas");if(!x.subject)e.push("Mata pelajaran");if(!x.topic)e.push("Topik");if(x.time<10||x.time>600)e.push("Alokasi waktu 10–600");if(!x.goal)e.push("Tujuan pembelajaran (atau gunakan Bantu Isi)");
+  if(e.length){$("#err").textContent="Lengkapi: "+e.join(", ");return}$("#err").textContent="";$("#out").innerHTML='<div class="card"><b>Menyusun dokumen…</b><div class="sk"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div></div>';
+  try{const r=await MockAI.generate(type,x);cur={id:Date.now(),title:r.title,type,topic:x.topic,f:x,sections:r.sections,history:[],updated:Date.now()};saveCur();toast("Dokumen berhasil dibuat (Data Demo)");go("edit")}catch(er){$("#out").innerHTML='<div class="card" role="alert">Gagal membuat dokumen. <button class="btn" id="rt">Coba lagi</button></div>';$("#rt").onclick=()=>$("#go").click()}};
+ f.scrollIntoView({behavior:"smooth"})}
+go("home");
+</script></body></html>
